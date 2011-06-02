@@ -14,7 +14,8 @@ SUBDIRS   = \
     qmljs \
     glsl \
     qmleditorwidgets \
-    symbianutils
+    symbianutils \
+    python
 
 # Windows: Compile Qt Creator CDB extension if Debugging tools can be detected.    
 win32 {
