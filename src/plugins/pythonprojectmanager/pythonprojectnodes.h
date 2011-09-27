@@ -30,8 +30,8 @@
 **
 **************************************************************************/
 
-#ifndef GENERICPROJECTNODE_H
-#define GENERICPROJECTNODE_H
+#ifndef PYTHONPROJECTNODES_H
+#define PYTHONPROJECTNODES_H
 
 #include <projectexplorer/projectnodes.h>
 
@@ -43,14 +43,16 @@ class IFile;
 }
 
 namespace PythonProjectManager {
-namespace Internal {
 
 class PythonProject;
+
+namespace Internal {
 
 class PythonProjectNode : public ProjectExplorer::ProjectNode
 {
 public:
     PythonProjectNode(PythonProject *project, Core::IFile *projectFile);
+    virtual ~PythonProjectNode();
 
     Core::IFile *projectFile() const;
     QString projectFilePath() const;
@@ -71,28 +73,29 @@ public:
     virtual bool removeFiles(const ProjectExplorer::FileType fileType,
                              const QStringList &filePaths,
                              QStringList *notRemoved = 0);
+
     virtual bool deleteFiles(const ProjectExplorer::FileType fileType,
                              const QStringList &filePaths);
 
     virtual bool renameFile(const ProjectExplorer::FileType fileType,
                              const QString &filePath,
                              const QString &newFilePath);
-
     virtual QList<ProjectExplorer::RunConfiguration *> runConfigurationsFor(Node *node);
+
 
     void refresh();
 
 private:
-    typedef QHash<QString, FolderNode *> FolderByName;
-    FolderNode *findOrCreateFolderByName(FolderByName *folderByName,
-                                         const QStringList &components, int end);
+    FolderNode *findOrCreateFolderByName(const QString &filePath);
+    FolderNode *findOrCreateFolderByName(const QStringList &components, int end);
 
 private:
     PythonProject *m_project;
     Core::IFile *m_projectFile;
+    QHash<QString, FolderNode *> m_folderByName;
 };
 
 } // namespace Internal
 } // namespace PythonProjectManager
 
-#endif // GENERICPROJECTNODE_H
+#endif // PYTHONPROJECTNODES_H

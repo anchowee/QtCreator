@@ -30,42 +30,44 @@
 **
 **************************************************************************/
 
-#ifndef PKGCONFIGTOOL_H
-#define PKGCONFIGTOOL_H
+#ifndef PYTHONPROJECTAPPLICATIONWIZARD_H
+#define PYTHONPROJECTAPPLICATIONWIZARD_H
 
-#include <QtCore/QObject>
-#include <QtCore/QStringList>
+#include <coreplugin/basefilewizard.h>
+#include <projectexplorer/baseprojectwizarddialog.h>
 
-namespace GenericProjectManager {
+namespace PythonProjectManager {
 namespace Internal {
 
-class PkgConfigTool: public QObject
+class PythonProjectApplicationWizardDialog : public ProjectExplorer::BaseProjectWizardDialog
+{
+    Q_OBJECT
+public:
+    explicit PythonProjectApplicationWizardDialog(QWidget *parent = 0);
+};
+
+class PythonProjectApplicationWizard : public Core::BaseFileWizard
 {
     Q_OBJECT
 
 public:
-    struct Package {
-        QString name;
-        QString description;
-        QStringList includePaths;
-        QStringList defines;
-        QStringList undefines;
-    };
+    PythonProjectApplicationWizard();
+    virtual ~PythonProjectApplicationWizard();
 
-public:
-    PkgConfigTool();
-    virtual ~PkgConfigTool();
+    static Core::BaseFileWizardParameters parameters();
 
-    QList<Package> packages() const;
+protected:
+    virtual QWizard *createWizardDialog(QWidget *parent,
+                                        const QString &defaultPath,
+                                        const WizardPageList &extensionPages) const;
 
-private:
-    void packages_helper() const;
+    virtual Core::GeneratedFiles generateFiles(const QWizard *w,
+                                               QString *errorMessage) const;
 
-private:
-    mutable QList<Package> m_packages;
+    virtual bool postGenerateFiles(const QWizard *w, const Core::GeneratedFiles &l, QString *errorMessage);
 };
 
 } // namespace Internal
-} // namespace GenericProjectManager
+} // namespace PythonProjectManager
 
-#endif // PKGCONFIGTOOL_H
+#endif // PYTHONPROJECTAPPLICATIONWIZARD_H

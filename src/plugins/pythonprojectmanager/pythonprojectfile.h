@@ -30,11 +30,10 @@
 **
 **************************************************************************/
 
-#ifndef PYTHONPROJECTMANAGER_H
-#define PYTHONPROJECTMANAGER_H
+#ifndef PYTHONPROJECTFILE_H
+#define PYTHONPROJECTFILE_H
 
-#include <projectexplorer/iprojectmanager.h>
-#include <coreplugin/icontext.h>
+#include <coreplugin/ifile.h>
 
 namespace PythonProjectManager {
 
@@ -42,26 +41,35 @@ class PythonProject;
 
 namespace Internal {
 
-class Manager: public ProjectExplorer::IProjectManager
+class PythonProjectFile : public Core::IFile
 {
     Q_OBJECT
 
 public:
-    Manager();
+    PythonProjectFile(PythonProject *parent, QString fileName);
+    virtual ~PythonProjectFile();
 
+    virtual bool save(QString *errorString, const QString &fileName, bool autoSave);
+    virtual QString fileName() const;
+    virtual void rename(const QString &newName);
+
+    virtual QString defaultPath() const;
+    virtual QString suggestedFileName() const;
     virtual QString mimeType() const;
-    virtual ProjectExplorer::Project *openProject(const QString &fileName, QString *errorString);
 
-    void notifyChanged(const QString &fileName);
+    virtual bool isModified() const;
+    virtual bool isReadOnly() const;
+    virtual bool isSaveAsAllowed() const;
 
-    void registerProject(PythonProject *project);
-    void unregisterProject(PythonProject *project);
+    ReloadBehavior reloadBehavior(ChangeTrigger state, ChangeType type) const;
+    bool reload(QString *errorString, ReloadFlag flag, ChangeType type);
 
 private:
-    QList<PythonProject *> m_projects;
+    PythonProject *m_project;
+    QString m_fileName;
 };
 
 } // namespace Internal
 } // namespace PythonProjectManager
 
-#endif // PYTHONPROJECTMANAGER_H
+#endif // PYTHONPROJECTFILE_H

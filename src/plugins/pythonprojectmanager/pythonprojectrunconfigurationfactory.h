@@ -30,38 +30,35 @@
 **
 **************************************************************************/
 
-#ifndef PYTHONPROJECTMANAGER_H
-#define PYTHONPROJECTMANAGER_H
+#ifndef PYTHONPROJECTRUNCONFIGURATIONFACTORY_H
+#define PYTHONPROJECTRUNCONFIGURATIONFACTORY_H
 
-#include <projectexplorer/iprojectmanager.h>
-#include <coreplugin/icontext.h>
+#include <projectexplorer/runconfiguration.h>
 
 namespace PythonProjectManager {
-
-class PythonProject;
-
 namespace Internal {
 
-class Manager: public ProjectExplorer::IProjectManager
+class PythonProjectRunConfigurationFactory : public ProjectExplorer::IRunConfigurationFactory
 {
     Q_OBJECT
 
 public:
-    Manager();
+    explicit PythonProjectRunConfigurationFactory(QObject *parent = 0);
+    ~PythonProjectRunConfigurationFactory();
 
-    virtual QString mimeType() const;
-    virtual ProjectExplorer::Project *openProject(const QString &fileName, QString *errorString);
+    QStringList availableCreationIds(ProjectExplorer::Target *parent) const;
+    QString displayNameForId(const QString &id) const;
 
-    void notifyChanged(const QString &fileName);
-
-    void registerProject(PythonProject *project);
-    void unregisterProject(PythonProject *project);
-
-private:
-    QList<PythonProject *> m_projects;
+    bool canCreate(ProjectExplorer::Target *parent, const QString &id) const;
+    ProjectExplorer::RunConfiguration *create(ProjectExplorer::Target *parent, const QString &id);
+    bool canRestore(ProjectExplorer::Target *parent, const QVariantMap &map) const;
+    ProjectExplorer::RunConfiguration *restore(ProjectExplorer::Target *parent, const QVariantMap &map);
+    bool canClone(ProjectExplorer::Target *parent, ProjectExplorer::RunConfiguration *source) const;
+    ProjectExplorer::RunConfiguration *clone(ProjectExplorer::Target *parent, ProjectExplorer::RunConfiguration *source);
 };
 
 } // namespace Internal
 } // namespace PythonProjectManager
 
-#endif // PYTHONPROJECTMANAGER_H
+
+#endif // PYTHONPROJECTRUNCONFIGURATIONFACTORY_H

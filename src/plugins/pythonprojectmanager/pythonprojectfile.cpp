@@ -30,61 +30,83 @@
 **
 **************************************************************************/
 
-#ifndef GENERICPROJECTWIZARD_H
-#define GENERICPROJECTWIZARD_H
-
-#include <projectexplorer/baseprojectwizarddialog.h>
-#include <coreplugin/basefilewizard.h>
-#include <utils/wizard.h>
-
-QT_BEGIN_NAMESPACE
-class QFileInfo;
-class QDir;
-QT_END_NAMESPACE
-
-namespace Utils {
-
-class FileWizardPage;
-
-} // namespace Utils
+#include "pythonprojectfile.h"
+#include "pythonproject.h"
+#include "pythonprojectconstants.h"
 
 namespace PythonProjectManager {
 namespace Internal {
 
-class FilesSelectionWizardPage;
+PythonProjectFile::PythonProjectFile(PythonProject *parent, QString fileName)
+    : Core::IFile(parent),
+      m_project(parent),
+      m_fileName(fileName)
+{ }
 
-class PythonProjectWizardDialog :
-        public ProjectExplorer::BaseProjectWizardDialog
+PythonProjectFile::~PythonProjectFile()
+{ }
+
+bool PythonProjectFile::save(QString *, const QString &, bool)
 {
-    Q_OBJECT
+    return false;
+}
 
-public:
-    PythonProjectWizardDialog(QWidget *parent = 0);
-    virtual ~PythonProjectWizardDialog();
-};
-
-class PythonProjectWizard : public Core::BaseFileWizard
+void PythonProjectFile::rename(const QString &newName)
 {
-    Q_OBJECT
+    // Can't happen...
+    Q_UNUSED(newName);
+    Q_ASSERT(false);
+}
 
-public:
-    PythonProjectWizard();
-    virtual ~PythonProjectWizard();
+QString PythonProjectFile::fileName() const
+{
+    return m_fileName;
+}
 
-    static Core::BaseFileWizardParameters parameters();
+QString PythonProjectFile::defaultPath() const
+{
+    return QString();
+}
 
-protected:
-    virtual QWizard *createWizardDialog(QWidget *parent,
-                                        const QString &defaultPath,
-                                        const WizardPageList &extensionPages) const;
+QString PythonProjectFile::suggestedFileName() const
+{
+    return QString();
+}
 
-    virtual Core::GeneratedFiles generateFiles(const QWizard *w,
-                                               QString *errorMessage) const;
+QString PythonProjectFile::mimeType() const
+{
+    return Constants::PYTHONMIMETYPE;
+}
 
-    virtual bool postGenerateFiles(const QWizard *w, const Core::GeneratedFiles &l, QString *errorMessage);
-};
+bool PythonProjectFile::isModified() const
+{
+    return false;
+}
+
+bool PythonProjectFile::isReadOnly() const
+{
+    return true;
+}
+
+bool PythonProjectFile::isSaveAsAllowed() const
+{
+    return false;
+}
+
+Core::IFile::ReloadBehavior PythonProjectFile::reloadBehavior(ChangeTrigger state, ChangeType type) const
+{
+    Q_UNUSED(state)
+    Q_UNUSED(type)
+    return BehaviorSilent;
+}
+
+bool PythonProjectFile::reload(QString *errorString, ReloadFlag flag, ChangeType type)
+{
+    Q_UNUSED(errorString)
+    Q_UNUSED(flag)
+    Q_UNUSED(type)
+    return true;
+}
 
 } // namespace Internal
 } // namespace PythonProjectManager
-
-#endif // GENERICPROJECTWIZARD_H

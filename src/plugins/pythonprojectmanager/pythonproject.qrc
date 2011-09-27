@@ -1,5 +1,8 @@
 <RCC>
-    <qresource prefix="/pythonproject" >
+    <qresource prefix="/pythonproject">
         <file>PythonProject.mimetypes.xml</file>
+        <file>images/pythonfolder.png</file>
+        <file>images/pythonproject.png</file>
+        <file>images/python_wizard.png</file>
     </qresource>
 </RCC>

@@ -1,31 +1,40 @@
 TEMPLATE = lib
 TARGET = PythonProjectManager
+
+QT += declarative
+
 include(../../qtcreatorplugin.pri)
 include(pythonprojectmanager_dependencies.pri)
-HEADERS = pythonproject.h \
+include(fileformat/fileformat.pri)
+
+DEFINES += PYTHONPROJECTMANAGER_LIBRARY
+HEADERS += pythonproject.h \
     pythonprojectplugin.h \
-    pythontarget.h \
     pythonprojectmanager.h \
     pythonprojectconstants.h \
     pythonprojectnodes.h \
-    pythonprojectwizard.h \
-    pythonprojectfileseditor.h \
-    pkgconfigtool.h \
-    pythonmakestep.h \
-    pythonbuildconfiguration.h \
-    selectablefilesmodel.h \
-    filesselectionwizardpage.h
-SOURCES = pythonproject.cpp \
+    pythonprojectfile.h \
+    pythonprojectruncontrol.h \
+    pythonprojectrunconfiguration.h \
+    pythonprojectrunconfigurationfactory.h \
+    pythonprojectapplicationwizard.h \
+    pythonprojectmanager_global.h \
+    pythonprojectmanagerconstants.h \
+    pythonprojecttarget.h \
+    pythonprojectrunconfigurationwidget.h
+
+SOURCES += pythonproject.cpp \
     pythonprojectplugin.cpp \
-    pythontarget.cpp \
     pythonprojectmanager.cpp \
     pythonprojectnodes.cpp \
-    pythonprojectwizard.cpp \
-    pythonprojectfileseditor.cpp \
-    pkgconfigtool.cpp \
-    pythonmakestep.cpp \
-    pythonbuildconfiguration.cpp \
-    selectablefilesmodel.cpp \
-    filesselectionwizardpage.cpp
+    pythonprojectfile.cpp \
+    pythonprojectruncontrol.cpp \
+    pythonprojectrunconfiguration.cpp \
+    pythonprojectrunconfigurationfactory.cpp \
+    pythonprojectapplicationwizard.cpp \
+    pythonprojecttarget.cpp \
+    pythonprojectrunconfigurationwidget.cpp
+
 RESOURCES += pythonproject.qrc
-FORMS += pythonmakestep.ui
+
+OTHER_FILES += PythonProject.mimetypes.xml

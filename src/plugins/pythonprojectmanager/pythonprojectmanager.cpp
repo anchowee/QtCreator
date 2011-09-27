@@ -35,63 +35,57 @@
 #include "pythonproject.h"
 
 #include <coreplugin/icore.h>
-#include <coreplugin/messagemanager.h>
-#include <projectexplorer/projectexplorer.h>
+#include <coreplugin/ifile.h>
 #include <projectexplorer/projectexplorerconstants.h>
+#include <projectexplorer/projectexplorer.h>
 #include <projectexplorer/session.h>
 
 #include <QtDebug>
 
-using namespace PythonProjectManager::Internal;
+namespace PythonProjectManager {
+namespace Internal {
 
 Manager::Manager()
-{ }
-
-QString Manager::mimeType() const
 {
-    return QLatin1String(Constants::GENERICMIMETYPE);
 }
 
-ProjectExplorer::Project *Manager::openProject(const QString &fileName,
-                                                QString *errorString)
+QString Manager::mimeType() const
+{ return QLatin1String(Constants::PYTHONMIMETYPE); }
+
+ProjectExplorer::Project *Manager::openProject(const QString &fileName, QString *errorString)
 {
-    Q_UNUSED(errorString)
-
-    if (!QFileInfo(fileName).isFile())
-        return 0;
-
+    QFileInfo fileInfo(fileName);
     ProjectExplorer::ProjectExplorerPlugin *projectExplorer = ProjectExplorer::ProjectExplorerPlugin::instance();
+
     foreach (ProjectExplorer::Project *pi, projectExplorer->session()->projects()) {
         if (fileName == pi->file()->fileName()) {
-            Core::MessageManager *messageManager = Core::ICore::instance()->messageManager();
-            messageManager->printToOutputPanePopup(tr("Failed opening project '%1': Project already open")
-                                                   .arg(QDir::toNativeSeparators(fileName)));
+            if (errorString)
+                *errorString = tr("Failed opening project '%1': Project already open") .arg(QDir::toNativeSeparators(fileName));
             return 0;
         }
     }
 
-    PythonProject *project = new PythonProject(this, fileName);
-    return project;
+    if (fileInfo.isFile())
+        return new PythonProject(this, fileName);
+
+    *errorString = tr("Failed opening project '%1': Project file is not a file").arg(QDir::toNativeSeparators(fileName));
+    return 0;
 }
 
 void Manager::registerProject(PythonProject *project)
-{
-    m_projects.append(project);
-}
+{ m_projects.append(project); }
 
 void Manager::unregisterProject(PythonProject *project)
-{
-    m_projects.removeAll(project);
-}
+{ m_projects.removeAll(project); }
 
 void Manager::notifyChanged(const QString &fileName)
 {
     foreach (PythonProject *project, m_projects) {
         if (fileName == project->filesFileName()) {
             project->refresh(PythonProject::Files);
-        } else if (fileName == project->includesFileName()
-                   || fileName == project->configFileName()) {
-            project->refresh(PythonProject::Configuration);
         }
     }
 }
+
+} // namespace Internal
+} // namespace PythonProjectManager

@@ -31,33 +31,44 @@
 **************************************************************************/
 
 #include "pythonprojectnodes.h"
+#include "pythonprojectmanager.h"
 #include "pythonproject.h"
 
 #include <coreplugin/ifile.h>
+#include <coreplugin/fileiconprovider.h>
 #include <projectexplorer/projectexplorer.h>
 
 #include <QtCore/QFileInfo>
+#include <QtCore/QDir>
+#include <QtCore/QTextStream>
+#include <QtGui/QStyle>
 
-using namespace PythonProjectManager;
-using namespace PythonProjectManager::Internal;
+namespace PythonProjectManager {
+namespace Internal {
 
 PythonProjectNode::PythonProjectNode(PythonProject *project, Core::IFile *projectFile)
-    : ProjectExplorer::ProjectNode(projectFile->fileName()),
+    : ProjectExplorer::ProjectNode(QFileInfo(projectFile->fileName()).absoluteFilePath()),
       m_project(project),
       m_projectFile(projectFile)
 {
     setDisplayName(QFileInfo(projectFile->fileName()).completeBaseName());
+    // make overlay
+    const QSize desiredSize = QSize(16, 16);
+    const QIcon projectBaseIcon(QLatin1String(":/pythonproject/images/pythonfolder.png"));
+    const QPixmap projectPixmap = Core::FileIconProvider::overlayIcon(QStyle::SP_DirIcon,
+                                                                      projectBaseIcon,
+                                                                      desiredSize);
+    setIcon(QIcon(projectPixmap));
 }
+
+PythonProjectNode::~PythonProjectNode()
+{ }
 
 Core::IFile *PythonProjectNode::projectFile() const
-{
-    return m_projectFile;
-}
+{ return m_projectFile; }
 
 QString PythonProjectNode::projectFilePath() const
-{
-    return m_projectFile->fileName();
-}
+{ return m_projectFile->fileName(); }
 
 void PythonProjectNode::refresh()
 {
@@ -73,55 +84,40 @@ void PythonProjectNode::refresh()
                                               ProjectFileType,
                                               /* generated = */ false);
 
-    FileNode *projectIncludesNode = new FileNode(m_project->includesFileName(),
-                                                 ProjectFileType,
-                                                 /* generated = */ false);
-
-    FileNode *projectConfigNode = new FileNode(m_project->configFileName(),
-                                               ProjectFileType,
-                                               /* generated = */ false);
-
     QStringList files = m_project->files();
     files.removeAll(m_project->filesFileName());
-    files.removeAll(m_project->includesFileName());
-    files.removeAll(m_project->configFileName());
 
     addFileNodes(QList<FileNode *>()
-                 << projectFilesNode
-                 << projectIncludesNode
-                 << projectConfigNode,
+                 << projectFilesNode,
                  this);
 
-    QStringList filePaths;
-    QHash<QString, QStringList> filesInPath;
-    const QString base = QFileInfo(path()).absolutePath();
-    const QDir baseDir(base);
+    QHash<QString, QStringList> filesInDirectory;
 
-    foreach (const QString &absoluteFileName, files) {
-        QFileInfo fileInfo(absoluteFileName);
-        const QString absoluteFilePath = fileInfo.path();
-        QString relativeFilePath;
+    foreach (const QString &fileName, files) {
+        QFileInfo fileInfo(fileName);
 
-        if (absoluteFilePath.startsWith(base)) {
-            relativeFilePath = absoluteFilePath.mid(base.length() + 1);
+        QString absoluteFilePath;
+        QString relativeDirectory;
+
+        if (fileInfo.isAbsolute()) {
+            // plain old file format
+            absoluteFilePath = fileInfo.filePath();
+            relativeDirectory = m_project->projectDir().relativeFilePath(fileInfo.path());
         } else {
-            // `file' is not part of the project.
-            relativeFilePath = baseDir.relativeFilePath(absoluteFilePath);
+            absoluteFilePath = m_project->projectDir().absoluteFilePath(fileInfo.filePath());
+            relativeDirectory = fileInfo.path();
+            if (relativeDirectory == ".")
+                relativeDirectory.clear();
         }
 
-        if (! filePaths.contains(relativeFilePath))
-            filePaths.append(relativeFilePath);
-
-        filesInPath[relativeFilePath].append(absoluteFileName);
+        filesInDirectory[relativeDirectory].append(absoluteFilePath);
     }
 
-    FolderByName folderByName;
-    foreach (const QString &filePath, filePaths) {
-        QStringList components = filePath.split(QLatin1Char('/'));
-        FolderNode *folder = findOrCreateFolderByName(&folderByName, components, components.size());
+    foreach (const QString &directory, filesInDirectory.keys()) {
+        FolderNode *folder = findOrCreateFolderByName(directory);
 
         QList<FileNode *> fileNodes;
-        foreach (const QString &file, filesInPath.value(filePath)) {
+        foreach (const QString &file, filesInDirectory.value(directory)) {
             FileType fileType = SourceType; // ### FIXME
             FileNode *fileNode = new FileNode(file, fileType, /*generated = */ false);
             fileNodes.append(fileNode);
@@ -129,13 +125,16 @@ void PythonProjectNode::refresh()
 
         addFileNodes(fileNodes, folder);
     }
+
+    m_folderByName.clear();
 }
 
-ProjectExplorer::FolderNode *PythonProjectNode::findOrCreateFolderByName
-    (FolderByName *folderByName, const QStringList &components, int end)
+ProjectExplorer::FolderNode *PythonProjectNode::findOrCreateFolderByName(const QStringList &components, int end)
 {
-    if (!end)
+    if (! end)
         return 0;
+
+    QString baseDir = QFileInfo(path()).path();
 
     QString folderName;
     for (int i = 0; i < end; ++i) {
@@ -148,20 +147,27 @@ ProjectExplorer::FolderNode *PythonProjectNode::findOrCreateFolderByName
     if (component.isEmpty())
         return this;
 
-    else if (FolderNode *folder = folderByName->value(folderName))
+    else if (FolderNode *folder = m_folderByName.value(folderName))
         return folder;
 
-    const QString baseDir = QFileInfo(path()).path();
-    FolderNode *folder = new FolderNode(baseDir + QLatin1Char('/') + folderName);
+    FolderNode *folder = new FolderNode(baseDir + '/' + folderName);
     folder->setDisplayName(component);
-    folderByName->insert(folderName, folder);
 
-    FolderNode *parent = findOrCreateFolderByName(folderByName, components, end - 1);
-    if (!parent)
+    m_folderByName.insert(folderName, folder);
+
+    FolderNode *parent = findOrCreateFolderByName(components, end - 1);
+    if (! parent)
         parent = this;
+
     addFolderNodes(QList<FolderNode*>() << folder, parent);
 
     return folder;
+}
+
+ProjectExplorer::FolderNode *PythonProjectNode::findOrCreateFolderByName(const QString &filePath)
+{
+    QStringList components = filePath.split(QLatin1Char('/'));
+    return findOrCreateFolderByName(components, components.length());
 }
 
 bool PythonProjectNode::hasBuildTargets() const
@@ -172,10 +178,11 @@ bool PythonProjectNode::hasBuildTargets() const
 QList<ProjectExplorer::ProjectNode::ProjectAction> PythonProjectNode::supportedActions(Node *node) const
 {
     Q_UNUSED(node);
-    return QList<ProjectAction>()
-        << AddNewFile
-        << AddExistingFile
-        << RemoveFile;
+    QList<ProjectAction> actions;
+    actions.append(AddNewFile);
+    actions.append(EraseFile);
+    actions.append(Rename);
+    return actions;
 }
 
 bool PythonProjectNode::canAddSubProject(const QString &proFilePath) const
@@ -196,39 +203,28 @@ bool PythonProjectNode::removeSubProjects(const QStringList &proFilePaths)
     return false;
 }
 
-bool PythonProjectNode::addFiles(const ProjectExplorer::FileType fileType,
-                                  const QStringList &filePaths, QStringList *notAdded)
+bool PythonProjectNode::addFiles(const ProjectExplorer::FileType /*fileType*/,
+                              const QStringList &filePaths, QStringList * /*notAdded*/)
 {
-    Q_UNUSED(fileType)
-    Q_UNUSED(notAdded)
-
     return m_project->addFiles(filePaths);
 }
 
-bool PythonProjectNode::removeFiles(const ProjectExplorer::FileType fileType,
-                                     const QStringList &filePaths, QStringList *notRemoved)
+bool PythonProjectNode::removeFiles(const ProjectExplorer::FileType /*fileType*/,
+                                 const QStringList & /*filePaths*/, QStringList * /*notRemoved*/)
 {
-    Q_UNUSED(fileType)
-    Q_UNUSED(notRemoved)
-
-    return m_project->removeFiles(filePaths);
-}
-
-bool PythonProjectNode::deleteFiles(const ProjectExplorer::FileType fileType,
-                                     const QStringList &filePaths)
-{
-    Q_UNUSED(fileType)
-    Q_UNUSED(filePaths)
     return false;
 }
 
-bool PythonProjectNode::renameFile(const ProjectExplorer::FileType fileType,
-                                    const QString &filePath, const QString &newFilePath)
+bool PythonProjectNode::deleteFiles(const ProjectExplorer::FileType /*fileType*/,
+                                 const QStringList & /*filePaths*/)
 {
-    Q_UNUSED(fileType)
-    Q_UNUSED(filePath)
-    Q_UNUSED(newFilePath)
-    return false;
+    return true;
+}
+
+bool PythonProjectNode::renameFile(const ProjectExplorer::FileType /*fileType*/,
+                                    const QString & /*filePath*/, const QString & /*newFilePath*/)
+{
+    return true;
 }
 
 QList<ProjectExplorer::RunConfiguration *> PythonProjectNode::runConfigurationsFor(Node *node)
@@ -236,3 +232,6 @@ QList<ProjectExplorer::RunConfiguration *> PythonProjectNode::runConfigurationsF
     Q_UNUSED(node)
     return QList<ProjectExplorer::RunConfiguration *>();
 }
+
+} // namespace Internal
+} // namespace PythonProjectManager

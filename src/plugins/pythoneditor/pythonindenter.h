@@ -11,6 +11,7 @@
 #define _PYTHONINDENTER_H_
 
 #include <texteditor/indenter.h>
+#include <texteditor/typingsettings.h>
 
 namespace PythonEditor {
 namespace Internal {
@@ -28,6 +29,9 @@ public:
                              const QTextBlock &block,
                              const QChar &typedChar,
                              const TextEditor::TabSettings &tabSettings);
+    virtual void setCodeStylePreferences(TextEditor::ICodeStylePreferences *cs);
+    virtual void invalidateCache(QTextDocument *doc);
+    virtual void setTypingSettings(const TextEditor::TypingSettings &ts);
 
     unsigned m_tabSize;
 };

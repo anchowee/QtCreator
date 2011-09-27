@@ -10,12 +10,15 @@ GNU Lesser General Public License Usage
 
 Alternatively, this plugin may be used under the terms of the GNU Lesser General Public License version 2.1 as published by the Free Software Foundation.  Please review the following information to ensure the GNU Lesser General Public License version 2.1 requirements will be met: http://www.gnu.org/licenses/old-licenses/lgpl-2.1.html.
     </license>
-    <category>Build Systems</category>
-    <description>Python support</description>
+    <category>Qt Quick</category>
+    <description>Qt Quick support</description>
     <url>http://qt.nokia.com</url>
     <dependencyList>
-        <dependency name=\"TextEditor\" version=\"$$QTCREATOR_VERSION\"/>
         <dependency name=\"ProjectExplorer\" version=\"$$QTCREATOR_VERSION\"/>
-        <dependency name=\"CppTools\" version=\"$$QTCREATOR_VERSION\"/>
+        <dependency name=\"TextEditor\" version=\"$$QTCREATOR_VERSION\"/>
+        <dependency name=\"PythonEditor\" version=\"$$QTCREATOR_VERSION\"/>
+        <dependency name=\"QmlJSEditor\" version=\"$$QTCREATOR_VERSION\"/>
+        <dependency name=\"Debugger\" version=\"$$QTCREATOR_VERSION\" />
+        <dependency name=\"QtSupport\" version=\"$$QTCREATOR_VERSION\" />
     </dependencyList>
 </plugin>

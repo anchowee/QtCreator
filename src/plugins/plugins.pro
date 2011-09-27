@@ -315,4 +315,6 @@ plugin_pythonprojectmanager.subdir = pythonprojectmanager
 plugin_pythonprojectmanager.depends = plugin_texteditor
 plugin_pythonprojectmanager.depends += plugin_projectexplorer
 plugin_pythonprojectmanager.depends += plugin_pythoneditor
-plugin_pythonprojectmanager.depends += plugin_cpptools
+plugin_pythonprojectmanager.depends += plugin_qmljseditor
+plugin_pythonprojectmanager.depends += plugin_debugger
+plugin_pythonprojectmanager.depends += plugin_qtsupport

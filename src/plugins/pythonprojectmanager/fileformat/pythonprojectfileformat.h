@@ -30,38 +30,16 @@
 **
 **************************************************************************/
 
-#ifndef PYTHONPROJECTMANAGER_H
-#define PYTHONPROJECTMANAGER_H
-
-#include <projectexplorer/iprojectmanager.h>
-#include <coreplugin/icontext.h>
+#ifndef PYTHONPROJECTFILEFORMAT_H
+#define PYTHONPROJECTFILEFORMAT_H
 
 namespace PythonProjectManager {
 
-class PythonProject;
-
-namespace Internal {
-
-class Manager: public ProjectExplorer::IProjectManager
-{
-    Q_OBJECT
-
+class PythonProjectFileFormat {
 public:
-    Manager();
-
-    virtual QString mimeType() const;
-    virtual ProjectExplorer::Project *openProject(const QString &fileName, QString *errorString);
-
-    void notifyChanged(const QString &fileName);
-
-    void registerProject(PythonProject *project);
-    void unregisterProject(PythonProject *project);
-
-private:
-    QList<PythonProject *> m_projects;
+    static void registerDeclarativeTypes();
 };
 
-} // namespace Internal
 } // namespace PythonProjectManager
 
-#endif // PYTHONPROJECTMANAGER_H
+#endif // PYTHONPROJECTFILEFORMAT_H

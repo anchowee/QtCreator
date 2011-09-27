@@ -30,43 +30,15 @@
 **
 **************************************************************************/
 
-#ifndef FILESSELECTIONWIZARDPAGE_H
-#define FILESSELECTIONWIZARDPAGE_H
+#ifndef PYTHONPROJECTMANAGER_GLOBAL_H
+#define PYTHONPROJECTMANAGER_GLOBAL_H
 
-#include <QtGui/QWizardPage>
-#include <QtGui/QLabel>
-#include <QtGui/QTreeView>
+#include <QtCore/qglobal.h>
 
-namespace PythonProjectManager {
-namespace Internal {
-class PythonProjectWizardDialog;
-class SelectableFilesModel;
+#if defined(PYTHONPROJECTMANAGER_LIBRARY)
+#  define PYTHONPROJECTMANAGER_EXPORT Q_DECL_EXPORT
+#else
+#  define PYTHONPROJECTMANAGER_EXPORT Q_DECL_IMPORT
+#endif
 
-class FilesSelectionWizardPage : public QWizardPage
-{
-    Q_OBJECT
-public:
-    FilesSelectionWizardPage(PythonProjectWizardDialog *pythonProjectWizard, QWidget *parent = 0);
-    virtual bool isComplete() const;
-    virtual void initializePage();
-    virtual void cleanupPage();
-    QStringList selectedFiles() const;
-    QStringList selectedPaths() const;
-private slots:
-    void applyFilter();
-    void parsingProgress(const QString &text);
-    void parsingFinished();
-private:
-    PythonProjectWizardDialog *m_pythonProjectWizardDialog;
-    SelectableFilesModel *m_model;
-    QLabel *m_filterLabel;
-    QLineEdit *m_filterLineEdit;
-    QPushButton *m_applyFilterButton;
-    QTreeView *m_view;
-    QLabel *m_label;
-    bool m_finished;
-};
-
-}
-}
-#endif // FILESSELECTIONWIZARDPAGE_H
+#endif // PYTHONPROJECTMANAGER_GLOBAL_H

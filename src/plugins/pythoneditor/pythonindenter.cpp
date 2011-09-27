@@ -11,6 +11,7 @@
 
 #include <texteditor/basetexteditor.h>
 #include <texteditor/tabsettings.h>
+#include <texteditor/typingsettings.h>
 
 #include <QtCore/QChar>
 #include <QtGui/QTextDocument>
@@ -121,3 +122,19 @@ void Indenter::indentBlock(QTextDocument *doc,
         tabSettings.indentLine(block, m_tabSize);
     }
 }
+
+void Indenter::setCodeStylePreferences(TextEditor::ICodeStylePreferences *cs)
+{
+    Q_UNUSED(cs);
+}
+
+void Indenter::invalidateCache(QTextDocument *doc)
+{
+    Q_UNUSED(doc);
+}
+
+void Indenter::setTypingSettings(const TextEditor::TypingSettings &ts)
+{
+    Q_UNUSED(ts);
+}
+

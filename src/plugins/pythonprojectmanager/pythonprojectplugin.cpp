@@ -1,73 +1,41 @@
-/**************************************************************************
-**
-** This file is part of Qt Creator
-**
-** Copyright (c) 2011 Nokia Corporation and/or its subsidiary(-ies).
-**
-** Contact: Nokia Corporation (info@qt.nokia.com)
-**
-**
-** GNU Lesser General Public License Usage
-**
-** This file may be used under the terms of the GNU Lesser General Public
-** License version 2.1 as published by the Free Software Foundation and
-** appearing in the file LICENSE.LGPL included in the packaging of this file.
-** Please review the following information to ensure the GNU Lesser General
-** Public License version 2.1 requirements will be met:
-** http://www.gnu.org/licenses/old-licenses/lgpl-2.1.html.
-**
-** In addition, as a special exception, Nokia gives you certain additional
-** rights. These rights are described in the Nokia Qt LGPL Exception
-** version 1.1, included in the file LGPL_EXCEPTION.txt in this package.
-**
-** Other Usage
-**
-** Alternatively, this file may be used in accordance with the terms and
-** conditions contained in a signed written agreement between you and Nokia.
-**
-** If you have questions regarding the use of this file, please contact
-** Nokia at info@qt.nokia.com.
-**
-**************************************************************************/
-
 #include "pythonprojectplugin.h"
 #include "pythonprojectmanager.h"
-#include "pythonprojectwizard.h"
+#include "pythonprojectapplicationwizard.h"
 #include "pythonprojectconstants.h"
-#include "pythonprojectfileseditor.h"
-#include "pythonmakestep.h"
-#include "pythontarget.h"
 #include "pythonproject.h"
-#include "selectablefilesmodel.h"
+#include "pythonprojectrunconfigurationfactory.h"
+#include "pythonprojectruncontrol.h"
+#include "pythonprojecttarget.h"
+#include "fileformat/pythonprojectfileformat.h"
 
+#include <extensionsystem/pluginmanager.h>
+
+#include <coreplugin/fileiconprovider.h>
 #include <coreplugin/icore.h>
 #include <coreplugin/mimedatabase.h>
-#include <coreplugin/actionmanager/actionmanager.h>
-#include <coreplugin/actionmanager/actioncontainer.h>
-
-#include <projectexplorer/projectexplorerconstants.h>
-#include <projectexplorer/projectexplorer.h>
-
 
 #include <texteditor/texteditoractionhandler.h>
 
+#include <projectexplorer/taskhub.h>
+
+#include <qtsupport/qtsupportconstants.h>
+
 #include <QtCore/QtPlugin>
+
+#include <QtGui/QApplication>
+#include <QtGui/QMessageBox>
+#include <QtGui/QPushButton>
 #include <QtCore/QDebug>
 
-#include <QtGui/QTreeView>
-#include <QtGui/QMainWindow>
-
-using namespace PythonProjectManager;
-using namespace PythonProjectManager::Internal;
+namespace PythonProjectManager {
 
 PythonProjectPlugin::PythonProjectPlugin()
-    : m_projectFilesEditorFactory(0)
-{ }
+{
+    qDebug() << __func__;
+}
 
 PythonProjectPlugin::~PythonProjectPlugin()
 {
-    removeObject(m_projectFilesEditorFactory);
-    delete m_projectFilesEditorFactory;
 }
 
 bool PythonProjectPlugin::initialize(const QStringList &, QString *errorMessage)
@@ -77,59 +45,30 @@ bool PythonProjectPlugin::initialize(const QStringList &, QString *errorMessage)
     ICore *core = ICore::instance();
     Core::MimeDatabase *mimeDB = core->mimeDatabase();
 
-    const QLatin1String mimetypesXml(":pythonproject/PythonProject.mimetypes.xml");
+    const QLatin1String mimetypesXml(":/pythonproject/PythonProject.mimetypes.xml");
 
-    if (! mimeDB->addMimeTypes(mimetypesXml, errorMessage))
+    if (!mimeDB->addMimeTypes(mimetypesXml, errorMessage))
         return false;
 
-    Manager *manager = new Manager;
-
-    TextEditor::TextEditorActionHandler *actionHandler =
-            new TextEditor::TextEditorActionHandler(Constants::C_FILESEDITOR);
-
-    m_projectFilesEditorFactory = new ProjectFilesFactory(manager, actionHandler);
-    addObject(m_projectFilesEditorFactory);
+    Internal::Manager *manager = new Internal::Manager;
 
     addAutoReleasedObject(manager);
-    addAutoReleasedObject(new PythonMakeStepFactory);
-    addAutoReleasedObject(new PythonProjectWizard);
-    addAutoReleasedObject(new PythonTargetFactory);
+    addAutoReleasedObject(new Internal::PythonProjectRunConfigurationFactory);
+    addAutoReleasedObject(new Internal::PythonProjectRunControlFactory);
+    addAutoReleasedObject(new Internal::PythonProjectApplicationWizard);
+    addAutoReleasedObject(new Internal::PythonProjectTargetFactory);
 
-    const Core::Context projectContext(Constants::PROJECTCONTEXT);
-    Core::ActionManager *am = core->actionManager();
-    Core::ActionContainer *mproject =
-            am->actionContainer(ProjectExplorer::Constants::M_PROJECTCONTEXT);
-    m_editFilesAction = new QAction(tr("Edit Files..."), this);
-    Core::Command *command = am->registerAction(m_editFilesAction, Constants::EDITFILESACTION, projectContext);
-    command->setAttribute(Core::Command::CA_Hide);
-    mproject->addAction(command, ProjectExplorer::Constants::G_PROJECT_FILES);
-    connect(m_editFilesAction, SIGNAL(triggered()), this, SLOT(editFiles()));
+    PythonProjectFileFormat::registerDeclarativeTypes();
 
-    connect(ProjectExplorer::ProjectExplorerPlugin::instance(),
-            SIGNAL(aboutToShowContextMenu(ProjectExplorer::Project*, ProjectExplorer::Node*)),
-            this, SLOT(updateContextMenu(ProjectExplorer::Project*, ProjectExplorer::Node*)));
-
+    Core::FileIconProvider *iconProvider = Core::FileIconProvider::instance();
+    iconProvider->registerIconOverlayForSuffix(QIcon(QLatin1String(":/pythonproject/images/pythonproject.png")), "pythonproject");
     return true;
 }
 
 void PythonProjectPlugin::extensionsInitialized()
-{ }
-
-void PythonProjectPlugin::updateContextMenu(ProjectExplorer::Project *project, ProjectExplorer::Node*)
 {
-    m_contextMenuProject = project;
 }
 
-void PythonProjectPlugin::editFiles()
-{
-    PythonProject *pythonProject = static_cast<PythonProject *>(m_contextMenuProject);
+} // namespace PythonProjectManager
 
-    Core::MimeDatabase *mimeDatabase = Core::ICore::instance()->mimeDatabase();
-    SelectableFilesDialog sfd(QFileInfo(pythonProject->file()->fileName()).path(), pythonProject->files(),
-                              mimeDatabase->suffixes().toSet(), Core::ICore::instance()->mainWindow());
-    if (sfd.exec() == QDialog::Accepted) {
-        pythonProject->setFiles(sfd.selectedFiles());
-    }
-}
-
-Q_EXPORT_PLUGIN(PythonProjectPlugin)
+Q_EXPORT_PLUGIN(PythonProjectManager::PythonProjectPlugin)
